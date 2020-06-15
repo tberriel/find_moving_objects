@@ -1,3 +1,4 @@
+
 # find_moving_objects
 
 A ROS library that can be used to find moving objects. It derives their positions and velocities,
@@ -34,3 +35,9 @@ NOTE: If running the launch file for real sensors, then you need the realsense2_
       installed. Also note that rviz is used by the launch file.
 
 This library is developed for, and tested on, ROS Kinetic.
+
+# Changes
+* Edited people message
+* Edit to publish on every callback even if the message is empty
+* Edit to publish only objects moving relative to the robot
+
