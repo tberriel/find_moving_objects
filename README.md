@@ -36,8 +36,9 @@ NOTE: If running the launch file for real sensors, then you need the realsense2_
 
 This library is developed for, and tested on, ROS Kinetic.
 
-# Changes
-* Edited people message
-* Edit to publish on every callback even if the message is empty
+## Changlog
+# 0.01
+* Added costmap_converter::ObstacleArrayMessage publications
 * Edit to publish only objects moving relative to the robot
+* Added python kalman filter to track MovingObjects array
 

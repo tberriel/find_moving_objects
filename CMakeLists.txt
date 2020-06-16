@@ -390,6 +390,11 @@ install(TARGETS laserscan_interpreter_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+##joint leg tracker
+catkin_install_python(
+  PROGRAMS scripts/track_moving_objects.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

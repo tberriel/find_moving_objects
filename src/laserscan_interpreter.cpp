@@ -418,6 +418,7 @@ void LaserScanInterpreterNode::onInit()
   nh_priv.param("velocity_arrows_use_base_frame", bank_argument.velocity_arrows_use_base_frame, default_velocity_arrows_use_base_frame);
   nh_priv.param("velocity_arrows_use_fixed_frame", bank_argument.velocity_arrows_use_fixed_frame, default_velocity_arrows_use_fixed_frame);
   nh_priv.param("publish_objects", bank_argument.publish_objects, default_publish_objects);
+  nh_priv.param("publish_obstacles_objects", bank_argument.publish_obstacles_objects, default_publish_obstacles_objects);
   nh_priv.param("map_frame", bank_argument.map_frame, default_map_frame);
   nh_priv.param("fixed_frame", bank_argument.fixed_frame, default_fixed_frame);
   nh_priv.param("base_frame", bank_argument.base_frame, default_base_frame);
@@ -457,11 +458,14 @@ void LaserScanInterpreterNode::onInit()
   if (strcmp(bank_argument.map_frame.c_str(), bank_argument.fixed_frame.c_str()) != 0)
   {
     tf_filter_target_frames.push_back(bank_argument.fixed_frame);
+    ROS_INFO("FIXED FRAME");
   }
   if (strcmp(bank_argument.map_frame.c_str(), bank_argument.base_frame.c_str()) != 0 &&
       strcmp(bank_argument.fixed_frame.c_str(), bank_argument.base_frame.c_str()) != 0)
   {
     tf_filter_target_frames.push_back(bank_argument.base_frame);
+    ROS_INFO("BASE FRAME");
+
   }
   
   // Create tf2 buffer, listener, subscriber and filter
@@ -507,15 +511,16 @@ using namespace find_moving_objects;
 /* ENTRY POINT */
 int main (int argc, char ** argv)
 {
+  
 # ifdef LSARRAY
   // Init ROS
-  ros::init(argc, argv, "laserscanarray_interpreter", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "laserscanarray_interpreter");
 
   // Create and init node object
   LaserScanArrayInterpreterNode ls_interpreter;
 # else
   // Init ROS
-  ros::init(argc, argv, "laserscan_interpreter", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "laserscan_interpreter");
   
   // Create and init node object
   LaserScanInterpreterNode ls_interpreter;

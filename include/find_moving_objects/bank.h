@@ -139,15 +139,20 @@ public:
   /**< Whether to publish <code>find_moving_objects::MovingObjectArray</code> messages, 
    * containing the found objects.
    * Initialized to <code>true</code>. */
+
+  bool publish_obstacles_objects; 
+  /**< Whether to publish <code>find_moving_objects::ObstaclesMessageArray</code> messages, 
+   * containing the found objects.
+   * Initialized to <code>true</code>. */
+
+  bool publish_objects_closest_point_markers; 
+  /**< Whether to publish the point on each found object closest to the sensor, 
+   * using <code>sensor_msgs::LaserScan</code> messages. 
+   * Initialized to <code>false</code>. */
   
   bool publish_ema; 
   /**< Whether to publish <code>sensor_msgs::LaserScan</code> messages showing (using intensities) which scan points 
    * define objects. 
-   * Initialized to <code>false</code>. */
-  
-  bool publish_objects_closest_point_markers; 
-  /**< Whether to publish the point on each found object closest to the sensor, 
-   * using <code>sensor_msgs::LaserScan</code> messages. 
    * Initialized to <code>false</code>. */
   
   bool publish_objects_velocity_arrows; 
@@ -201,6 +206,10 @@ public:
   std::string topic_objects; 
   /**< The topic on which to publish <code>find_moving_objects::MovingObjectArray</code> messages. 
    * Initialized to <code>"/moving_objects_arrays"</code>. */
+
+  std::string topic_obstacles_objects; 
+  /**< The topic on which to publish <code>costmap_converter::ObstaclesArrayMessage</code> messages. 
+   * Initialized to <code>"/obstacles"</code>. */
   
   std::string topic_ema;
   /**< The topic on which to publish the messages showing which scan points define objects.
@@ -384,6 +393,7 @@ private:
   ros::Publisher pub_objects_delta_position_lines;
   ros::Publisher pub_objects_width_lines;
   ros::Publisher pub_objects;
+  ros::Publisher pub_obstacles_objects;
   
   /* SEQUENCE NR */
   unsigned int moa_seq;

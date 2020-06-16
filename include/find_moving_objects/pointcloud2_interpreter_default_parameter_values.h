@@ -13,6 +13,7 @@ const double      default_delta_width_confidence_decrease_factor            = 0.
 const double      default_bank_view_angle                                   = M_PI;
 const int         default_nr_points_per_scan_in_bank                        = 360;
 const bool        default_publish_objects                                   = true;
+const bool        default_publish_obstacles_objects                         = true;
 const bool        default_publish_ema                                       = true;
 const bool        default_publish_objects_closest_points_markers            = true;
 const bool        default_publish_objects_velocity_arrows                   = true;

@@ -16,12 +16,12 @@
        />
   
   <arg name="use_camera"
-       default="true"
+       default="false"
        doc="Set to false if camera should not be used"
        />
   
   <arg name="use_bag"
-       default="false"
+       default="true"
        doc="Set to true if provided bag file should be played instead of using real sensors"
        />
   
@@ -183,7 +183,9 @@
     <node pkg="find_moving_objects"
           type="example_rplidar_echoer_node"
           name="rplidar_echoer"
-          />
+          >
+          <remap from="/lidar/scan" to="/scan"/>
+     </node>
 
     <!-- Run rosbag to play back the recording -->
     <node pkg="rosbag"
@@ -194,7 +196,7 @@
                 $(arg rosbag_extra_args)
                 --bags $(arg bag_path)/$(arg bag)"
           required="$(arg rosbag_required)">
-      <remap from="/scan" to="/lidar/scan"/>
+      <!--remap from="/scan" to="/lidar/scan"/-->
     </node>
   </group>
 </launch>

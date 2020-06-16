@@ -44,6 +44,9 @@
 #include <sensor_msgs/PointField.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <costmap_converter/ObstacleArrayMsg.h>
+#include <costmap_converter/ObstacleMsg.h>
+#include <geometry_msgs/Point32.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/message_filter.h>
@@ -128,6 +131,7 @@ BankArgument::BankArgument()
   object_threshold_bank_tracking_max_delta_distance = 0.2;
   base_confidence = 0.3;
   publish_objects = true;
+  publish_obstacles_objects = true;
   publish_ema = true;
   publish_objects_closest_point_markers = false;
   publish_objects_velocity_arrows = false;
@@ -141,6 +145,7 @@ BankArgument::BankArgument()
   delta_position_line_ns = "delta_position_line_ns";
   width_line_ns = "width_line_ns";
   topic_objects = "moving_objects_arrays";
+  topic_obstacles_objects = "obstcales";
   topic_ema = "ema";
   topic_objects_closest_point_markers = "objects_closest_point_markers";
   topic_objects_velocity_arrows = "objects_velocity_arrows";
@@ -196,6 +201,7 @@ std::ostream& operator<<(std::ostream & os, const BankArgument & ba)
     "  delta_position_line_ns = " << ba.delta_position_line_ns << std::endl <<
     "  width_line_ns = " << ba.width_line_ns << std::endl <<
     "  topic_objects = " << ba.topic_objects << std::endl <<
+    "  topic_obstacles_objects = " << ba.topic_obstacles_objects << std::endl <<
     "  topic_ema = " << ba.topic_ema << std::endl <<
     "  topic_objects_closest_point_markers = " << ba.topic_objects_closest_point_markers << std::endl <<
     "  topic_objects_velocity_arrows = " << ba.topic_objects_velocity_arrows << std::endl <<
@@ -334,6 +340,9 @@ void BankArgument::check()
   ROS_ASSERT_MSG(!publish_objects || topic_objects != "", 
                  "If publishing MovingObjectArray messages, then a topic for that must be given."); 
   
+  ROS_ASSERT_MSG(!publish_obstacles_objects || topic_obstacles_objects != "", 
+                 "If publishing ObstacleMessageArray messages, then a topic for that must be given."); 
+
   ROS_ASSERT_MSG(!publish_ema || topic_ema != "", 
                  "If publishing object points via LaserScan visualization messages, "
                  "then a topic for that must be given."); 
@@ -436,6 +445,10 @@ void Bank::initBank(BankArgument bank_argument)
   pub_objects = 
     node->advertise<MovingObjectArray>(bank_argument.topic_objects, 
                                        bank_argument.publish_buffer_size);
+  pub_obstacles_objects = 
+    node->advertise<costmap_converter::ObstacleArrayMsg>(bank_argument.topic_obstacles_objects, 
+                                       bank_argument.publish_buffer_size);
+
   
   /* Init bank */
   this->bank_argument = bank_argument;
@@ -932,6 +945,11 @@ void Bank::findAndReportMovingObjects()
   
   // Old positions of the objects in moa
   MovingObjectArray moa_old_positions;
+
+  // Obstacle Message Array
+  costmap_converter::ObstacleArrayMsg oam;
+
+  
   
   /* Find objects in the new scans */
   unsigned int nr_objects_found = 0;
@@ -941,10 +959,17 @@ void Bank::findAndReportMovingObjects()
   const float range_min = bank_argument.range_min;
   unsigned int i=0;
   
+
+  
+
   // Stamps
   ros::Time old_time = ros::Time(bank_stamp[bank_index_put]);
   ros::Time new_time = ros::Time(bank_stamp[bank_index_newest]);
-  
+  //Set values
+
+  oam.header.frame_id = bank_argument.fixed_frame;
+  oam.header.seq = nr_objects_found;
+  oam.header.stamp = new_time;
   // Handle 360 degrees sensors!
   unsigned int upper_limit_out_of_bounds_scan_point = bank_argument.points_per_scan;
   while(i<upper_limit_out_of_bounds_scan_point)
@@ -1113,7 +1138,12 @@ void Bank::findAndReportMovingObjects()
         // Create a Moving Object
         MovingObject mo;
         MovingObject mo_old_positions;
-        
+
+        //Create an Obstacle Message
+        costmap_converter::ObstacleMsg om;
+        //Create points for geometry_msgs::polygon
+        geometry_msgs::Point32 om_point;
+
         // Set the expected information
         mo.map_frame = bank_argument.map_frame;
         mo.fixed_frame = bank_argument.fixed_frame;
@@ -1134,6 +1164,13 @@ void Bank::findAndReportMovingObjects()
         //   z: up        
         mo.distance = distance;
         
+        om.header.frame_id = bank_argument.fixed_frame;
+        om.header.seq = nr_objects_found;
+        om.header.stamp = new_time; // ros::Time(bank_stamp[bank_index_newest]);
+        om.radius = object_seen_width/2.0;
+        om.polygon.points.push_back(om_point); 
+
+
         // Optical frame?
         if (bank_argument.sensor_frame_has_z_axis_forward)
         {
@@ -1518,6 +1555,9 @@ void Bank::findAndReportMovingObjects()
                               new_time,
                               bank_argument.fixed_frame);
           mo.position_in_fixed_frame = out.point;
+          om.polygon.points[0].x = out.point.x;
+          om.polygon.points[0].y = out.point.y;
+          om.polygon.points[0].z = out.point.z;
           
           tf_buffer->transform(in, // mo.position, 
                               out, // mo.position_in_base_frame, 
@@ -1645,6 +1685,10 @@ void Bank::findAndReportMovingObjects()
         mo.velocity_in_base_frame.x = dx_base / dt;
         mo.velocity_in_base_frame.y = dy_base / dt;
         mo.velocity_in_base_frame.z = dz_base / dt;
+
+        om.velocities.twist.linear.x = dx_fixed / dt;
+        om.velocities.twist.linear.y = dy_fixed / dt;
+        om.velocities.twist.linear.z = dz_fixed / dt;
         
         // Calculate speed and normalized velocity
         mo.speed = sqrt(mo.velocity.x * mo.velocity.x  +  
@@ -1711,10 +1755,7 @@ void Bank::findAndReportMovingObjects()
         }
         
         // Threshold check
-        if (bank_argument.object_threshold_min_speed <= mo.speed || 
-            bank_argument.object_threshold_min_speed <= mo.speed_in_map_frame || 
-            bank_argument.object_threshold_min_speed <= mo.speed_in_fixed_frame || 
-            bank_argument.object_threshold_min_speed <= mo.speed_in_base_frame)
+        if (bank_argument.object_threshold_min_speed <= mo.speed_in_fixed_frame)
         {
           // We believe that the object is moving in relation to at least one of the frames
           ROS_DEBUG_STREAM("Moving object:" << std::endl \
@@ -1798,6 +1839,10 @@ void Bank::findAndReportMovingObjects()
             // Push back the moving object info to the msg
             moa.objects.push_back(mo);
             moa_old_positions.objects.push_back(mo_old_positions);
+
+            //Push back the obstacles into the array
+            oam.obstacles.push_back(om);
+
           }
         }
       }
@@ -1819,6 +1864,12 @@ void Bank::findAndReportMovingObjects()
     // Publish MOA message
     pub_objects.publish(moa);
   }
+  //Obstacle Message
+  if (bank_argument.publish_obstacles_objects)
+  {
+    pub_obstacles_objects.publish(oam);
+  }
+  
   
   // Save timestamp
   ros::Time now = ros::Time::now();
