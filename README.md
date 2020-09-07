@@ -41,4 +41,6 @@ This library is developed for, and tested on, ROS Kinetic.
 * Added costmap_converter::ObstacleArrayMessage publications
 * Edit to publish only objects moving relative to the robot
 * Added python kalman filter to track MovingObjects array
-
+ 
+# 0.002
+* Removed python kalman filter. Better use STRAND bayes_tracker
