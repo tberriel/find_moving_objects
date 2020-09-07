@@ -230,7 +230,6 @@ add_dependencies(moving_objects_echoer_node ${PROJECT_NAME}_generate_messages)
 target_link_libraries(
 find_moving_objects
   ${catkin_LIBRARIES}
-  m
 )
 
 # target_link_libraries(
@@ -389,12 +388,6 @@ install(TARGETS laserscan_interpreter_node
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-##joint leg tracker
-catkin_install_python(
-  PROGRAMS scripts/track_moving_objects.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
